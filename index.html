@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>JARVIS - Spotify Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Orbitron" rel="stylesheet">
+  <style>
+    body {
+      background: black;
+      font-family: "Orbitron", sans-serif;
+      margin: 0;
+      overflow: hidden;
+      color: #33abb9;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+    }
+
+    /* ===== PANEL DE SPOTIFY ===== */
+    .spotify-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 340px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 2px solid #33abb9;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 0 25px #33abb9;
+      z-index: 400;
+      backdrop-filter: blur(6px);
+    }
+
+    .spotify-panel h2 {
+      font-size: 14px;
+      margin: 0 0 15px 0;
+      text-align: center;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px #33abb9;
+    }
+
+    .spotify-panel button {
+      background: rgba(24, 67, 68, 0.8);
+      color: #33abb9;
+      font-family: "Orbitron", sans-serif;
+      font-size: 12px;
+      border: 2px solid #33abb9;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      letter-spacing: 1px;
+    }
+
+    .spotify-panel button:hover {
+      background: #33abb9;
+      color: #000;
+      box-shadow: 0 0 15px #33abb9;
+    }
+
+    .now-playing {
+      background: rgba(24, 67, 68, 0.4);
+      border: 1px solid #33abb9;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+      text-align: center;
+      font-size: 11px;
+      min-height: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-shadow: 0 0 6px #33abb9;
+    }
+
+    .now-playing .titulo {
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .now-playing .artista {
+      font-size: 10px;
+      opacity: 0.75;
+      margin-top: 3px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .search-row input {
+      flex: 1;
+      background: rgba(0,0,0,0.6);
+      border: 2px solid #33abb9;
+      border-radius: 8px;
+      color: #33abb9;
+      font-family: "Orbitron", sans-serif;
+      font-size: 11px;
+      padding: 8px;
+      outline: none;
+    }
+
+    .search-row input::placeholder {
+      color: rgba(51, 171, 185, 0.5);
+    }
+
+    .volume-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .volume-row input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: #184344;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .volume-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #33abb9;
+      cursor: pointer;
+      box-shadow: 0 0 8px #33abb9;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    /* Botón principal */
+    #start-btn {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
+      font-family: "Orbitron", sans-serif;
+      font-size: 20px;
+      color: #33abb9;
+      background: rgba(24, 67, 68, 0.9);
+      border: 3px solid #33abb9;
+      border-radius: 15px;
+      cursor: pointer;
+      box-shadow: 0 0 30px #33abb9;
+      z-index: 500;
+      transition: all 0.3s ease;
+    }
+
+    #start-btn:hover {
+      background: #33abb9;
+      color: #000;
+      box-shadow: 0 0 50px #33abb9;
+    }
+
+    /* Video cámara */
+    #video-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 240px;
+      height: 180px;
+      border: 2px solid #33abb9;
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 200;
+      box-shadow: 0 0 15px #33abb9;
+      display: none;
+      background: #000;
+    }
+    #video-container video { display: none; }
+    #video-container canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      transform: scaleX(-1);
+      background: #000;
+    }
+
+    /* Indicador de gesto */
+    #gesture-indicator {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #33abb9;
+      font-size: 16px;
+      z-index: 300;
+      text-shadow: 0 0 10px #33abb9;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid #33abb9;
+      display: none;
+    }
+
+    /* Indicador de voz */
+    #voice-indicator {
+      position: fixed;
+      top: 80px;
+      left: 20px;
+      color: #33abb9;
+      font-size: 14px;
+      z-index: 300;
+      text-shadow: 0 0 10px #33abb9;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid #33abb9;
+      display: none;
+      max-width: 320px;
+    }
+
+    #voice-indicator.listening {
+      border-color: #e8823a;
+      color: #e8823a;
+      text-shadow: 0 0 10px #e8823a;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 5px #e8823a; }
+      50% { box-shadow: 0 0 20px #e8823a; }
+    }
+
+    /* Anillo */
+    .container-ring {
+      width: 80vw; height: 80vh;
+      display: flex; justify-content: center; align-items: center;
+      position: absolute;
+      top: calc(50% - 45vh);
+      left: calc(50% - 40vw);
+      transition: all 1.5s ease;
+      transform: rotateX(0deg);
+      will-change: transform;
+      perspective: 1200px;
+      transform-style: preserve-3d;
+    }
+    .container-ring .ringMain { width: 100%; height: 100%; z-index: 1; }
+    .container-ring .ringMain circle {
+      fill: none;
+      stroke-linecap: round;
+      transform-origin: 50% 50%;
+      will-change: transform;
+      stroke: #33abb9;
+    }
+    .container-ring .ringMain .c1 { stroke-width: 0.1; }
+    .container-ring .ringMain .c2 { stroke-width: 0.1; stroke-dasharray: 5, 10; animation: rotate-c2 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+    .container-ring .ringMain [class^=c3] { stroke-width: 1; transform: rotate(-90deg); animation: progress 10s ease-out forwards; }
+    .container-ring .ringMain .c3-1-red { stroke: #ba2433; stroke-dasharray: 38, 100; }
+    .container-ring .ringMain .c3-2 { stroke-dasharray: 46, 100; }
+    .container-ring .ringMain .c3-3 { stroke-dasharray: 54, 100; }
+    .container-ring .ringMain .c4 { stroke-width: 0.5; animation: rotate-c4 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+    .container-ring .ringMain .c5 { stroke-width: 0.7; stroke-dasharray: 40; animation: rotate-c5 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+    .container-ring .ringMain .c6 { stroke-width: 0.7; stroke-dasharray: 10; animation: rotate-c6 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+    .container-ring .ringMain .c7 { stroke-width: 0.7; stroke-dasharray: 0.3; animation: rotate-c7 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+    .container-ring .ringMain .c8 { stroke-width: 2; stroke-dasharray: 30, 100; animation: rotate-c8 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+    .container-ring .ringMain .c9 { stroke-width: 0.4; stroke-dasharray: 20; animation: rotate-c9 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+    .container-ring .ringMain .c10 { stroke-width: 0.4; stroke-dasharray: 80, 100; animation: rotate-c10 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+    .container-ring .ringMain .c11 { stroke-width: 1; stroke-dasharray: 80, 100; animation: rotate-c11 10s infinite cubic-bezier(0.645, 0.045, 0.355, 1); }
+
+    .container-ring .cpu {
+      position: absolute; color: #33abb9;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      width: 100%; height: 100%;
+      transition: transform 1s ease-out;
+    }
+    .container-ring .cpu p { font-size: 0.8vw; margin: 0; }
+
+    .container-ring .rotate-skew {
+      position: absolute; width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      will-change: transform; z-index: -1;
+      transition: transform 1s ease-out;
+    }
+    .container-ring .rotate-skew .skew-square {
+      position: absolute; width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      will-change: transform;
+      animation: speed 2s infinite linear;
+    }
+    .container-ring .rotate-skew .skew-square [class^=square] {
+      position: absolute; background: #33abb9;
+      transform-origin: 50% 50%;
+      width: 25px; height: 15px;
+      box-shadow: 1px 1px 10px #33abb9;
+      transition: all 1s ease-in;
+      will-change: transform;
+    }
+    .container-ring .rotate-skew .skew-square .square-1 { transform: rotate(0deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-2 { transform: rotate(20deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-3 { transform: rotate(40deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-4 { transform: rotate(60deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-5 { transform: rotate(80deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-6 { transform: rotate(100deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-7 { transform: rotate(120deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-8 { transform: rotate(140deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-9 { transform: rotate(160deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-10 { transform: rotate(180deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-11 { transform: rotate(200deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-12 { transform: rotate(220deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-13 { transform: rotate(240deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-14 { transform: rotate(260deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-15 { transform: rotate(280deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-16 { transform: rotate(300deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-17 { transform: rotate(320deg) translateY(-90px) skewX(-50deg); }
+    .container-ring .rotate-skew .skew-square .square-18 { transform: rotate(340deg) translateY(-90px) skewX(-50deg); }
+
+    .container-ring .rectangle {
+      position: absolute; width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      will-change: transform; transition: transform 1s ease-out;
+    }
+    .container-ring .rectangle [class^=rectangle] {
+      position: absolute; background: #184344;
+      border: 3px solid #33abb9; border-radius: 20%;
+      width: 45px; height: 25px;
+    }
+    .container-ring .rectangle .rectangle-2 { transform: rotate(15deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-3 { transform: rotate(30deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-4 { transform: rotate(45deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-5 { transform: rotate(60deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-6 { transform: rotate(75deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-7 { transform: rotate(90deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-8 { transform: rotate(105deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-9 { transform: rotate(120deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-10 { transform: rotate(135deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-11 { transform: rotate(150deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-12 { transform: rotate(165deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-13 { transform: rotate(180deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-14 { transform: rotate(195deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-15 { transform: rotate(210deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-16 { transform: rotate(225deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-17 { transform: rotate(240deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-18 { transform: rotate(255deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-19 { transform: rotate(270deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-20 { transform: rotate(285deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-21 { transform: rotate(300deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-22 { transform: rotate(315deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-23 { transform: rotate(330deg) translateY(-140px); }
+    .container-ring .rectangle .rectangle-24 { transform: rotate(345deg) translateY(-140px); }
+
+    .container-ring .symbol {
+      position: absolute; width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      transition: transform 1s ease-out;
+    }
+    .container-ring .symbol [class^=symbol] {
+      position: absolute; transform-origin: 50% 50%;
+      width: 30px; height: 40px;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      color: #ffffff;
+    }
+    .container-ring .symbol [class^=symbol] p { filter: drop-shadow(0.1px 0.1px 1px #ffffff); }
+    .container-ring .symbol .symbol-1 { transform: rotate(0deg) translateY(-200px); }
+    .container-ring .symbol .symbol-2 { transform: rotate(45deg) translateY(-200px) rotate(-45deg); }
+    .container-ring .symbol .symbol-3 { transform: rotate(315deg) translateY(-200px) rotate(-315deg); }
+    .container-ring .symbol .symbol-4 { transform: rotate(135deg) translateY(-200px) rotate(-135deg); }
+    .container-ring .symbol .symbol-5 { transform: rotate(180deg) translateY(-200px) rotate(-180deg); }
+    .container-ring .symbol .symbol-6 { transform: rotate(225deg) translateY(-200px) rotate(-225deg); }
+
+    .beginAnim { animation: beginAnim 0.8s ease 0s 1; }
+
+    /* ===== ANIMACIONES CORREGIDAS: SOLO ROTACIÓN LATERAL (EJE Y) ===== */
+    .rotate-container-ring { transform: perspective(1200px) rotateY(35deg); }
+    .cpu-3d { transform: translateZ(420px); }
+    .skew-square-3d { transform: translateZ(350px); }
+    .rectangle-3d { transform: translateZ(250px); }
+    .symbol-3d { transform: translateZ(150px); }
+    .skew-square-boost { animation: changeColor 5s linear 1 forwards; }
+    .skew-square-scale { transform: translateZ(50px) scale(5); }
+    .animation-container-ring { transform: perspective(1200px) rotateY(180deg); }
+
+    @keyframes beginAnim { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    @keyframes speed { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes progress { 0% { stroke-dasharray: 0 100; } }
+    @keyframes changeColor {
+      0% { background: #33abb9; box-shadow: 1px 1px 10px #33abb9; }
+      25% { border-radius: 50%; }
+      50% { background: #e8823a; box-shadow: 1px 1px 10px #e8823a; }
+      100% { background: #ba2433; box-shadow: 1px 1px 10px #ba2433; }
+    }
+    @keyframes rotate-c2 { 0% { transform: rotate(0deg); } 10% { transform: rotate(90deg); } 30% { transform: rotate(180deg); } 60% { transform: rotate(3000deg); } 80% { transform: rotate(-40deg); } 100% { transform: rotate(0deg); } }
+    @keyframes rotate-c4 { 0% { transform: rotate(0deg); } 10% { transform: rotate(20deg); } 30% { transform: rotate(50deg); } 60% { transform: rotate(90deg); } 80% { transform: rotate(-40deg); } 100% { transform: rotate(0deg); } }
+    @keyframes rotate-c5 { 0% { transform: rotate(0deg); } 10% { transform: rotate(-90deg); } 30% { transform: rotate(40deg); } 50% { transform: rotate(120deg); } 60% { transform: rotate(90deg); } 90% { transform: rotate(300deg); } 100% { transform: rotate(0deg); } }
+    @keyframes rotate-c6 { 0% { transform: rotate(0deg); } 10% { transform: rotate(70deg); } 30% { transform: rotate(40deg); } 50% { transform: rotate(20deg); } 60% { transform: rotate(100deg); } 90% { transform: rotate(180deg); } 100% { transform: rotate(0deg); } }
+    @keyframes rotate-c7 { 0% { transform: rotate(0deg); } 10% { transform: rotate(80deg); } 30% { transform: rotate(50deg); } 60% { transform: rotate(80deg); } 80% { transform: rotate(150deg); } 100% { transform: rotate(0deg); } }
+    @keyframes rotate-c8 { 0% { transform: rotate(0deg); } 10% { transform: rotate(40deg); } 30% { transform: rotate(80deg); } 60% { transform: rotate(-60deg); } 80% { transform: rotate(100deg); } 100% { transform: rotate(0deg); } }
+    @keyframes rotate-c9 { 0% { transform: rotate(0deg); } 10% { transform: rotate(20deg); } 30% { transform: rotate(40deg); } 50% { transform: rotate(10deg); } 60% { transform: rotate(120deg); } 90% { transform: rotate(70deg); } 100% { transform: rotate(0deg); } }
+    @keyframes rotate-c10 { 0% { transform: rotate(0deg); } 10% { transform: rotate(70deg); } 30% { transform: rotate(-40deg); } 50% { transform: rotate(20deg); } 60% { transform: rotate(100deg); } 90% { transform: rotate(180deg); } 100% { transform: rotate(0deg); } }
+    @keyframes rotate-c11 { 0% { transform: rotate(0deg); } 10% { transform: rotate(80deg); } 30% { transform: rotate(50deg); } 60% { transform: rotate(80deg); } 80% { transform: rotate(150deg); } 100% { transform: rotate(0deg); } }
+  </style>
+</head>
+
+<body>
+  <button id="start-btn">ACTIVAR CÁMARA Y VOZ</button>
+
+  <div id="video-container">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div id="gesture-indicator">Gesto: --</div>
+  <div id="voice-indicator">🎤 Voz: esperando...</div>
+
+  <!-- ===== PANEL DE SPOTIFY (SIMPLIFICADO) ===== -->
+  <div class="spotify-panel">
+    <h2>🎵 SPOTIFY CONTROL</h2>
+
+    <button id="login-btn" class="login-btn">INICIAR SESIÓN CON SPOTIFY</button>
+
+    <div class="now-playing" id="now-playing" style="display:none;">
+      <div class="titulo" id="track-name">Sin reproducción</div>
+      <div class="artista" id="track-artist">—</div>
+    </div>
+
+    <div class="search-row" id="search-row" style="display:none;">
+      <input type="text" id="search-input" placeholder="Buscar canción..." />
+      <button id="search-btn">🔍</button>
+    </div>
+
+    <div class="volume-row" id="volume-row" style="display:none;">
+      <span>🔊</span>
+      <input type="range" id="volume-slider" min="0" max="100" value="50" />
+      <span id="volume-value">50%</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="container-ring beginAnim">
+      <svg class="ringMain" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="4" class="c1"></circle>
+        <circle cx="50" cy="50" r="5" class="c2"></circle>
+        <circle cx="50" cy="50" r="7" class="c3 c3-1-red"></circle>
+        <circle cx="50" cy="50" r="8.5" class="c3 c3-2"></circle>
+        <circle cx="50" cy="50" r="10" class="c3 c3-3"></circle>
+        <circle cx="50" cy="50" r="27" class="c4"></circle>
+        <circle cx="50" cy="50" r="28" class="c5"></circle>
+        <circle cx="50" cy="50" r="29" class="c6"></circle>
+        <circle cx="50" cy="50" r="43" class="c7"></circle>
+        <circle cx="50" cy="50" r="45" class="c8"></circle>
+        <circle cx="50" cy="50" r="46" class="c9"></circle>
+        <circle cx="50" cy="50" r="48" class="c10"></circle>
+        <circle cx="50" cy="50" r="49" class="c11"></circle>
+      </svg>
+      <div class="cpu">
+        <p>CPU</p>
+        <p>18%</p>
+      </div>
+      <div class="rotate-skew">
+        <div class="skew-square">
+          <div class="square-1"></div><div class="square-2"></div><div class="square-3"></div>
+          <div class="square-4"></div><div class="square-5"></div><div class="square-6"></div>
+          <div class="square-7"></div><div class="square-8"></div><div class="square-9"></div>
+          <div class="square-10"></div><div class="square-11"></div><div class="square-12"></div>
+          <div class="square-13"></div><div class="square-14"></div><div class="square-15"></div>
+          <div class="square-16"></div><div class="square-17"></div><div class="square-18"></div>
+        </div>
+      </div>
+      <div class="rectangle">
+        <div class="rectangle-2"></div><div class="rectangle-3"></div><div class="rectangle-4"></div>
+        <div class="rectangle-5"></div><div class="rectangle-6"></div><div class="rectangle-7"></div>
+        <div class="rectangle-8"></div><div class="rectangle-9"></div><div class="rectangle-10"></div>
+        <div class="rectangle-11"></div><div class="rectangle-12"></div><div class="rectangle-13"></div>
+        <div class="rectangle-14"></div><div class="rectangle-15"></div><div class="rectangle-16"></div>
+        <div class="rectangle-17"></div><div class="rectangle-18"></div><div class="rectangle-19"></div>
+        <div class="rectangle-20"></div><div class="rectangle-21"></div><div class="rectangle-22"></div>
+        <div class="rectangle-23"></div><div class="rectangle-24"></div>
+      </div>
+      <div class="symbol">
+        <div class="symbol-1"><p>M</p></div>
+        <div class="symbol-2"><p>A</p></div>
+        <div class="symbol-3"><p>C</p></div>
+        <div class="symbol-4"><p>></p></div>
+        <div class="symbol-5"><p>P</p></div>
+        <div class="symbol-6"><p>C</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+
+  <script>
+    // ================== CONFIG SPOTIFY ==================
+    const CLIENT_ID = "50e7bc5f5480475388953e9ad718dfed";
+    // ⚠️ Ajusta esto al puerto de tu Live Server
+    const REDIRECT_URI = "http://127.0.0.1:5500/jarvis.html";
+    const SCOPES = [
+      "user-modify-playback-state",
+      "user-read-playback-state",
+      "user-read-currently-playing"
+    ].join(" ");
+
+    // ================== PKCE ==================
+    function generarRandomString(length) {
+      const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      const values = crypto.getRandomValues(new Uint8Array(length));
+      return values.reduce((acc, x) => acc + possible[x % possible.length], "");
+    }
+
+    async function sha256(plain) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(plain);
+      return crypto.subtle.digest("SHA-256", data);
+    }
+
+    function base64encode(input) {
+      return btoa(String.fromCharCode(...new Uint8Array(input)))
+        .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+    }
+
+    async function generarCodeChallenge(codeVerifier) {
+      const hashed = await sha256(codeVerifier);
+      return base64encode(hashed);
+    }
+
+    // ================== LOGIN ==================
+    const loginBtn = document.getElementById("login-btn");
+
+    async function login() {
+      const codeVerifier = generarRandomString(64);
+      localStorage.setItem("code_verifier", codeVerifier);
+      const codeChallenge = await generarCodeChallenge(codeVerifier);
+
+      const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        response_type: "code",
+        redirect_uri: REDIRECT_URI,
+        scope: SCOPES,
+        code_challenge_method: "S256",
+        code_challenge: codeChallenge
+      });
+
+      window.location.href = "https://accounts.spotify.com/authorize?" + params.toString();
+    }
+
+    loginBtn.addEventListener("click", login);
+
+    // ================== TOKEN ==================
+    async function getToken(code) {
+      const codeVerifier = localStorage.getItem("code_verifier");
+      const body = new URLSearchParams({
+        client_id: CLIENT_ID,
+        grant_type: "authorization_code",
+        code: code,
+        redirect_uri: REDIRECT_URI,
+        code_verifier: codeVerifier
+      });
+
+      const response = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body
+      });
+
+      const data = await response.json();
+      if (data.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+        localStorage.setItem("expires_at", Date.now() + data.expires_in * 1000);
+      }
+      return data.access_token;
+    }
+
+    async function refreshAccessToken() {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (!refreshToken) return null;
+
+      const body = new URLSearchParams({
+        client_id: CLIENT_ID,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken
+      });
+
+      const response = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body
+      });
+
+      const data = await response.json();
+      if (data.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("expires_at", Date.now() + data.expires_in * 1000);
+      }
+      return data.access_token;
+    }
+
+    async function getValidToken() {
+      const token = localStorage.getItem("access_token");
+      const expiresAt = localStorage.getItem("expires_at");
+      if (!token) return null;
+      if (Date.now() > expiresAt - 60000) return await refreshAccessToken();
+      return token;
+    }
+
+    (async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get("code");
+      if (code) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        await getToken(code);
+        mostrarPanel();
+        actualizarNowPlaying();
+      } else {
+        const token = await getValidToken();
+        if (token) {
+          mostrarPanel();
+          actualizarNowPlaying();
+        }
+      }
+    })();
+
+    function mostrarPanel() {
+      loginBtn.style.display = "none";
+      document.getElementById("now-playing").style.display = "flex";
+      document.getElementById("search-row").style.display = "flex";
+      document.getElementById("volume-row").style.display = "flex";
+    }
+
+    // ================== SPOTIFY API ==================
+    async function spotifyFetch(endpoint, options = {}) {
+      const token = await getValidToken();
+      if (!token) { console.warn("No hay token"); return null; }
+
+      const response = await fetch("https://api.spotify.com/v1" + endpoint, {
+        ...options,
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        }
+      });
+      if (response.status === 204) return null;
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        console.error("Spotify error:", response.status, err);
+        return null;
+      }
+      return response.json().catch(() => null);
+    }
+
+    async function play() {
+      await spotifyFetch("/me/player/play", { method: "PUT" });
+      setTimeout(actualizarNowPlaying, 800);
+    }
+    async function pause() {
+      await spotifyFetch("/me/player/pause", { method: "PUT" });
+      setTimeout(actualizarNowPlaying, 800);
+    }
+    async function setVolume(vol) {
+      await spotifyFetch("/me/player/volume?volume_percent=" + vol, { method: "PUT" });
+    }
+
+    // ================== BÚSQUEDA MEJORADA ==================
+   async function buscarYReproducir(query) {
+  // 1. Limpiar la frase: quitar palabras de comando y relleno
+  let busqueda = query
+    .toLowerCase()
+    .replace(/música de|musica de|canciones de|canción de|cancion de/g, "")
+    .replace(/reproduce|reproducir|pon|toca|coloca|ponme|play/g, "")
+    .replace(/por favor|de|el|la|los|las|un|una/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!busqueda) {
+    console.warn("Búsqueda vacía");
+    return;
+  }
+
+  console.log("🔍 Buscando con filtros:", busqueda);
+
+  // 2. Intentar buscar con el filtro de artista y canción si detectamos "de [artista]"
+  // Ejemplo: "dile que tu me quieres de ozuna" -> track:"dile que tu me quieres" artist:ozuna
+  let endpoint = "/search?q=" + encodeURIComponent(busqueda) + "&type=track&limit=10";
+
+  // Si la frase contiene " de ", separamos para buscar por artista y canción
+  if (busqueda.includes(" de ")) {
+    const partes = busqueda.split(" de ");
+    if (partes.length === 2 && partes[0].length > 2 && partes[1].length > 1) {
+      const trackName = partes[0].trim();
+      const artistName = partes[1].trim();
+      // Usamos la sintaxis de filtros de Spotify
+      const queryFiltro = `track:"${trackName}" artist:"${artistName}"`;
+      endpoint = "/search?q=" + encodeURIComponent(queryFiltro) + "&type=track&limit=10";
+      console.log(`   Aplicando filtro: track="${trackName}" artist="${artistName}"`);
+    }
+  }
+
+  const resultados = await spotifyFetch(endpoint);
+
+  if (!resultados || !resultados.tracks.items.length) {
+    console.warn("No encontrado con filtros, reintentando búsqueda simple...");
+    // Fallback: búsqueda normal si no hay resultados
+    const resFallback = await spotifyFetch("/search?q=" + encodeURIComponent(busqueda) + "&type=track&limit=10");
+    if (!resFallback || !resFallback.tracks.items.length) {
+      console.warn("No encontrado en absoluto:", busqueda);
+      return;
+    }
+    // Reemplazamos los resultados
+    resultados.tracks.items = resFallback.tracks.items;
+  }
+
+  // 3. Sistema de puntuación MEJORADO
+  const palabras = busqueda.split(/\s+/).filter(p => p.length >= 3);
+  let mejorTrack = resultados.tracks.items[0];
+  let mejorPuntaje = -1;
+
+  resultados.tracks.items.forEach(track => {
+    let puntaje = 0;
+    const nombreTrack = track.name.toLowerCase();
+    const artistaTrack = track.artists.map(a => a.name.toLowerCase()).join(" ");
+    const albumTrack = track.album.name.toLowerCase();
+
+    // --- NUEVA LÓGICA DE PUNTUACIÓN ---
+    
+    // A) Coincidencia EXACTA del nombre de la canción completa (lo más importante)
+    if (nombreTrack === busqueda) {
+      puntaje += 100; // Puntuación máxima
+    }
+    // B) El nombre de la canción CONTIENE la búsqueda completa
+    else if (nombreTrack.includes(busqueda)) {
+      puntaje += 50;
+    }
+    // C) La búsqueda completa contiene el nombre de la canción
+    else if (busqueda.includes(nombreTrack)) {
+      puntaje += 40;
+    }
+
+    // D) Coincidencia por palabras individuales (como antes, pero con más peso)
+    palabras.forEach(palabra => {
+      if (nombreTrack === palabra) puntaje += 25;
+      else if (nombreTrack.startsWith(palabra)) puntaje += 15;
+      else if (nombreTrack.includes(palabra)) puntaje += 8;
+      
+      if (artistaTrack === palabra) puntaje += 20; // Artista exacto
+      else if (artistaTrack.includes(palabra)) puntaje += 6;
+      
+      if (albumTrack.includes(palabra)) puntaje += 2;
+    });
+
+    // E) Bonus por popularidad (los hits son más probables)
+    puntaje += (track.popularity || 0) / 10;
+
+    // F) Penalización para versiones que no queremos (remixes, live, etc.) si no los pediste
+    if (!busqueda.includes("remix") && nombreTrack.includes("remix")) puntaje -= 30;
+    if (!busqueda.includes("live") && nombreTrack.includes("live")) puntaje -= 30;
+    if (!busqueda.includes("acoustic") && nombreTrack.includes("acoustic")) puntaje -= 30;
+    if (!busqueda.includes("cover") && nombreTrack.includes("cover")) puntaje -= 20;
+
+    console.log(`   "${track.name}" - ${track.artists[0].name} → ${puntaje.toFixed(1)} pts`);
+
+    if (puntaje > mejorPuntaje) {
+      mejorPuntaje = puntaje;
+      mejorTrack = track;
+    }
+  });
+
+  console.log("🎵 Elegido:", mejorTrack.name, "-", mejorTrack.artists[0].name, `(${mejorPuntaje.toFixed(1)} pts)`);
+
+  // 4. Reproducir
+  await spotifyFetch("/me/player/play", {
+    method: "PUT",
+    body: JSON.stringify({ uris: [mejorTrack.uri] })
+  });
+
+  setTimeout(actualizarNowPlaying, 800);
+}
+    async function actualizarNowPlaying() {
+      const estado = await spotifyFetch("/me/player/currently-playing");
+      const trackName = document.getElementById("track-name");
+      const trackArtist = document.getElementById("track-artist");
+      if (estado && estado.item) {
+        trackName.textContent = estado.item.name;
+        trackArtist.textContent = estado.item.artists.map(a => a.name).join(", ");
+      } else {
+        trackName.textContent = "Sin reproducción";
+        trackArtist.textContent = "—";
+      }
+    }
+
+    setInterval(actualizarNowPlaying, 5000);
+
+    // Eventos UI
+    document.getElementById("search-btn").addEventListener("click", () => {
+      const q = document.getElementById("search-input").value.trim();
+      if (q) buscarYReproducir(q);
+    });
+    document.getElementById("search-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const q = e.target.value.trim();
+        if (q) buscarYReproducir(q);
+      }
+    });
+    document.getElementById("volume-slider").addEventListener("input", (e) => {
+      const val = e.target.value;
+      document.getElementById("volume-value").textContent = val + "%";
+      clearTimeout(window.volumeTimeout);
+      window.volumeTimeout = setTimeout(() => setVolume(val), 200);
+    });
+
+    // ================== CÁMARA + GESTOS ==================
+    const containerRing = document.querySelector(".container-ring");
+    const startBtn = document.getElementById("start-btn");
+    const videoContainer = document.getElementById("video-container");
+    const videoElement = document.getElementById("video");
+    const canvasElement = document.getElementById("canvas");
+    const canvasCtx = canvasElement.getContext("2d");
+    const gestureIndicator = document.getElementById("gesture-indicator");
+
+    const containerElements = [...document.querySelectorAll(".container *")];
+    const rectangleAll = containerElements.find((item) => item.classList.contains("rectangle"));
+    const skewAll = containerElements.find((item) => item.classList.contains("rotate-skew"));
+    const symbolAll = containerElements.find((item) => item.classList.contains("symbol"));
+    const cpuNumber = containerElements.find((item) => item.classList.contains("cpu"));
+    const skewElements = [...document.querySelectorAll(".skew-square *")];
+    const symbolElements = [...document.querySelectorAll(".symbol *")];
+    const cpuElement = document.querySelector(".cpu :nth-child(2)");
+
+    let numberPercent = 0;
+    let is3DActive = false, isBoostActive = false, isInspectActive = false;
+    let lastGesture = "", lastGestureTime = 0;
+    const GESTURE_COOLDOWN_MS = 1500;
+
+    setTimeout(() => containerRing.classList.remove("beginAnim"), 800);
+
+    const changeSymbolCPU = () => {
+      const randomUn = Math.floor(Math.random() * 2);
+      symbolElements.forEach((el) => el.innerHTML = randomUn);
+      numberPercent++;
+      cpuElement.innerHTML = numberPercent >= 100 ? "100" : numberPercent;
+    };
+    window.setInterval(changeSymbolCPU, 100);
+    changeSymbolCPU();
+
+    function detectGesture(landmarks) {
+      let extendedCount = 0;
+      if (landmarks[4].x < landmarks[3].x) extendedCount++;
+      if (landmarks[8].y < landmarks[6].y) extendedCount++;
+      if (landmarks[12].y < landmarks[10].y) extendedCount++;
+      if (landmarks[16].y < landmarks[14].y) extendedCount++;
+      if (landmarks[20].y < landmarks[18].y) extendedCount++;
+      if (extendedCount >= 4) return "MANO_ABIERTA";
+      if (extendedCount === 0) return "PUÑO";
+      if (extendedCount === 1 && landmarks[8].y < landmarks[6].y) return "INDICE";
+      return "DESCONOCIDO";
+    }
+
+    function toggle3D() {
+      containerRing.classList.toggle("rotate-container-ring");
+      skewAll.classList.toggle("skew-square-3d");
+      rectangleAll.classList.toggle("rectangle-3d");
+      symbolAll.classList.toggle("symbol-3d");
+      cpuNumber.classList.toggle("cpu-3d");
+      is3DActive = !is3DActive;
+    }
+    function toggleBoost() {
+      skewElements.forEach((el) => el.classList.toggle("skew-square-boost"));
+      skewAll.classList.toggle("skew-square-scale");
+      isBoostActive = !isBoostActive;
+    }
+    function toggleInspect() {
+      containerRing.classList.toggle("animation-container-ring");
+      isInspectActive = !isInspectActive;
+    }
+
+    function processGesture(gestureName) {
+      const now = Date.now();
+      if (now - lastGestureTime < GESTURE_COOLDOWN_MS) return;
+      if (gestureName === lastGesture) return;
+      if (gestureName === "DESCONOCIDO") return;
+      lastGesture = gestureName;
+      lastGestureTime = now;
+      gestureIndicator.textContent = "Gesto: " + gestureName;
+      switch (gestureName) {
+        case "MANO_ABIERTA": toggle3D(); break;
+        case "PUÑO": toggleBoost(); break;
+        case "INDICE": toggleInspect(); break;
+      }
+    }
+
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 0,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
+    });
+    hands.onResults((results) => {
+      canvasCtx.save();
+      canvasCtx.fillStyle = "#000000";
+      canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, { color: "#33abb9", lineWidth: 3 });
+        drawLandmarks(canvasCtx, landmarks, { color: "#33abb9", lineWidth: 1, radius: 2, fillColor: "#000000" });
+        processGesture(detectGesture(landmarks));
+      } else {
+        if (Date.now() - lastGestureTime > 2000) {
+          gestureIndicator.textContent = "Gesto: --";
+          lastGesture = "";
+        }
+      }
+      canvasCtx.restore();
+    });
+
+    // ================== MICRÓFONO / VOZ ==================
+    const voiceIndicator = document.getElementById("voice-indicator");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    function iniciarVoz() {
+      if (!SpeechRecognition) {
+        voiceIndicator.textContent = "⚠️ Voz no soportada. Usa Chrome o Edge.";
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = "es-ES";
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        voiceIndicator.textContent = "🎤 Escuchando...";
+        voiceIndicator.classList.add("listening");
+      };
+
+      recognition.onresult = async (event) => {
+        const texto = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+        console.log("🎤 Escuché:", texto);
+        voiceIndicator.textContent = "🎤 " + texto;
+
+        if (/\b(pausa|alto|para|detén|deten|detente|stop)\b/.test(texto)) {
+          await pause();
+          voiceIndicator.textContent = "⏸️ Pausado";
+        }
+        else if (/\b(continúa|continua|reanuda|sigue|play|resume)\b/.test(texto)) {
+          await play();
+          voiceIndicator.textContent = "▶️ Reproduciendo";
+        }
+        else if (texto.includes("sube volumen") || texto.includes("subir volumen") || texto.includes("más volumen") || texto.includes("mas volumen")) {
+          const slider = document.getElementById("volume-slider");
+          const nuevo = Math.min(100, parseInt(slider.value) + 20);
+          slider.value = nuevo;
+          document.getElementById("volume-value").textContent = nuevo + "%";
+          await setVolume(nuevo);
+        }
+        else if (texto.includes("baja volumen") || texto.includes("bajar volumen") || texto.includes("menos volumen")) {
+          const slider = document.getElementById("volume-slider");
+          const nuevo = Math.max(0, parseInt(slider.value) - 20);
+          slider.value = nuevo;
+          document.getElementById("volume-value").textContent = nuevo + "%";
+          await setVolume(nuevo);
+        }
+        else if (texto.includes("silencia") || texto.includes("mute")) {
+          await setVolume(0);
+          document.getElementById("volume-slider").value = 0;
+          document.getElementById("volume-value").textContent = "0%";
+        }
+        else if (texto.includes("reproduce") || texto.includes("pon") || texto.includes("toca") || texto.includes("reproducir")) {
+          const nombre = texto
+            .replace("reproduce", "")
+            .replace("reproducir", "")
+            .replace("pon", "")
+            .replace("toca", "")
+            .trim();
+          if (nombre) await buscarYReproducir(nombre);
+        }
+      };
+
+      recognition.onerror = (e) => {
+        console.warn("Error voz:", e.error);
+        if (e.error === "not-allowed") {
+          voiceIndicator.textContent = "⚠️ Permiso de micrófono denegado";
+        }
+      };
+
+      recognition.onend = () => {
+        if (recognition && recognition._activo) {
+          try { recognition.start(); } catch (e) {}
+        } else {
+          voiceIndicator.classList.remove("listening");
+        }
+      };
+
+      recognition._activo = true;
+      try { recognition.start(); } catch (e) {}
+    }
+
+    // ================== INICIO: CÁMARA + VOZ ==================
+    async function startCamera() {
+      try {
+        startBtn.textContent = "CARGANDO...";
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: true
+        });
+
+        videoElement.srcObject = stream;
+        videoElement.setAttribute("playsinline", "");
+        videoElement.muted = true;
+
+        await new Promise((resolve) => {
+          videoElement.onloadedmetadata = () => {
+            videoElement.play();
+            resolve();
+          };
+        });
+
+        canvasElement.width = videoElement.videoWidth || 640;
+        canvasElement.height = videoElement.videoHeight || 480;
+
+        startBtn.style.display = "none";
+        videoContainer.style.display = "block";
+        gestureIndicator.style.display = "block";
+        voiceIndicator.style.display = "block";
+
+        const camera = new Camera(videoElement, {
+          onFrame: async () => { await hands.send({ image: videoElement }); },
+          width: 640, height: 480
+        });
+        await camera.start();
+
+        gestureIndicator.textContent = "Gesto: -- (acerca tu mano)";
+
+        iniciarVoz();
+
+        console.log("✅ Cámara y micrófono activos");
+      } catch (error) {
+        console.error("Error al acceder a cámara/micrófono:", error);
+        startBtn.textContent = "REINTENTAR";
+        alert(
+          "No se pudo acceder a la cámara o al micrófono.\n\n" +
+          "Asegúrate de:\n" +
+          "1. Dar permisos de cámara Y micrófono\n" +
+          "2. Usar http://127.0.0.1:PUERTO/ (no file://)\n" +
+          "3. No tener otra app usando la cámara\n" +
+          "4. Usar Chrome o Edge"
+        );
+      }
+    }
+
+    startBtn.addEventListener("click", startCamera);
+
+    document.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "1": toggle3D(); break;
+        case "2": toggleBoost(); break;
+        case "3": toggleInspect(); break;
+      }
+    });
+
+    console.log("JARVIS + Spotify + Voz listo.");
+  </script>
+</body>
+</html>
